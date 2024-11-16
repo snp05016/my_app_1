@@ -1,0 +1,6 @@
+.image {
+    height: 300px; /* set desired height */
+    width: 500px; /* maintain aspect ratio */
+    align-items: center;
+  }
+  

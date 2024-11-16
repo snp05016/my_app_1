@@ -1,0 +1,8 @@
+.image {
+  height: 300px; /* maintain this if height fits */
+  width: auto; /* maintain aspect ratio automatically */
+  display: block; /* makes it easier to center */
+  margin: 0 auto; /* centers horizontally */
+  border: 2px solid #000; /* optional for styling */
+  border-radius: 8px; /* optional, rounded corners */
+}

@@ -1,0 +1,44 @@
+/* Apply to parent container for flex alignment */
+div {
+  display: flex; /* enables flexbox */
+  justify-content: center; /* centers horizontally */
+  align-items: center; /* centers vertically */
+  height: 100vh; /* full viewport height for vertical centering */
+  background-color: transparent; /* optional background for aesthetics */
+  margin: 48%; /* no extra space around the parent div */
+  position: absolute;
+
+}
+
+/* Style the image */
+.image {
+  height: 600px; /* set height */
+  width: auto; /* maintain aspect ratio */
+  border: 2px solid #000; /* optional border */
+  border-radius: 8px; /* rounded corners for smooth look */
+}
+
+/* Alert Box Styling */
+.alert-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff4040; /* red background for alert */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 18px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 999; /* make sure it's on top of everything */
+  animation: fadeIn 1s; /* optional fade-in effect */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
