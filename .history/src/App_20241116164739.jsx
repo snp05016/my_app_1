@@ -7,11 +7,13 @@ const Cam = () => {
   // Function to fetch the last alert
   const fetchLastAlert = async () => {
     try {
-      const response = await fetch("http://localhost:7000/get_last_alert");
-      const data = await response.json();
-      setAlert(data.last_alert);
+      // Access the text file from the public folder
+      const response = await fetch("alerts_log.txt");
+      const text = await response.text();
+      const lines = text.trim().split("\n");
+      setAlert(lines[lines.length - 1] || "No alerts yet!"); // Set the last line of the file as alert
     } catch (error) {
-      console.error("Error fetching last alert:", error);
+      console.error("Error reading alert file:", error);
       setAlert("Unable to fetch alerts.");
     }
   };
@@ -30,6 +32,7 @@ const Cam = () => {
         alt="Video"
       />
       <div className="alert-box">
+        {console.log(alert)};
         <p>{alert}</p> {/* Display the alert message */}
       </div>
     </div>

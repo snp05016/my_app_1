@@ -1,4 +1,4 @@
-from flask import Flask, Response, jsonify
+from flask import Flask, Response
 from flask_socketio import SocketIO, emit
 from scipy.spatial import distance as dist
 from imutils import face_utils
@@ -17,8 +17,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Initialize SocketIO with CORS support for WebSocket connections
 socketio = SocketIO(app, cors_allowed_origins="*")  # Allow all origins for SocketIO
-
-LOG_FILE = "alerts_log.txt"  # Log file to store alerts
 
 class VideoCamera:
     def __init__(self):
@@ -55,14 +53,14 @@ class VideoCamera:
             self.vs.stop()
 
     def alarm(self, msg):
+        # Append alert to a log file
+        with open("alerts_log.txt", "a") as log_file:
+            log_file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {msg}\n")
+        
         # Emit the message to React via WebSocket
         socketio.emit('alert', {'message': msg})
         print(msg)
         self.saying = False
-
-        # Log the alert to the file
-        with open(LOG_FILE, "a") as f:
-            f.write(f"{msg}\n")
 
     def eye_aspect_ratio(self, eye):
         A = dist.euclidean(eye[1], eye[5])
@@ -156,22 +154,7 @@ class VideoCamera:
             return None
         return jpeg.tobytes()
 
-@app.route('/get_last_alert', methods=['GET'])
-def get_last_alert():
-    try:
-        with open(LOG_FILE, "r") as file:
-            lines = file.readlines()
-            last_line = lines[-1].strip() if lines else "No alerts yet!"
-        return jsonify({'last_alert': last_line}), 200
-    except FileNotFoundError:
-        return jsonify({'last_alert': "No log file found!"}), 404
-    except Exception as e:
-        return jsonify({'last_alert': f"Error: {str(e)}"}), 500
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
+# Route for video feed
 def generate_frames():
     camera = VideoCamera()
     while True:
@@ -181,5 +164,12 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
+
+@app.route('/video_feed')
+def video_feed():
+    print(generate_frames())
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# Run the Flask-SocketIO app
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=7000)

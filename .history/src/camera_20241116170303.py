@@ -61,7 +61,7 @@ class VideoCamera:
         self.saying = False
 
         # Log the alert to the file
-        with open(LOG_FILE, "a") as f:
+        with open(LOG_FILE, "r") as f:
             f.write(f"{msg}\n")
 
     def eye_aspect_ratio(self, eye):
