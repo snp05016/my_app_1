@@ -35,8 +35,8 @@ class VideoCamera:
             self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
             # Constants
-            self.EYE_AR_THRESH = 0.3
-            self.EYE_AR_CONSEC_FRAMES = 30
+            self.EYE_AR_THRESH = 0.2
+            self.EYE_AR_CONSEC_FRAMES = 15
             self.YAWN_THRESH = 20
             self.ALERT_TILT_ANGLE = 30  # degrees
 
@@ -149,7 +149,7 @@ class VideoCamera:
                     self.alarm_status2 = True
                     t = Thread(target=self.alarm, args=("Yawn detected!",))
                     t.start()
-                cv2.putText(frame, "YAWN ALERT!", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                # cv2.putText(frame, "YAWN ALERT!", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             else:
                 self.alarm_status2 = False
 
