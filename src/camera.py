@@ -10,6 +10,7 @@ import time
 import math
 from threading import Thread
 from flask_cors import CORS
+from playsound import playsound  # Import playsound module
 
 # Initialize Flask app and SocketIO
 app = Flask(__name__)
@@ -26,12 +27,12 @@ class VideoCamera:
             # Initialize video stream
             self.vs = VideoStream(src=0).start()
             time.sleep(2.0)  # allow camera to warm up
-            
+
             # Load Haar cascade and Dlib predictor
             self.detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
             if self.detector.empty():
                 raise ValueError("Haar cascade file not loaded. Check 'haarcascade_frontalface_default.xml'.")
-            
+
             self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
             # Constants
@@ -45,7 +46,6 @@ class VideoCamera:
             self.alarm_status2 = False
             self.saying = False
             self.COUNTER = 0
-            self.drowsiness_start_time = None
         except Exception as e:
             print(f"Initialization error: {e}")
             self.vs = None
@@ -54,7 +54,7 @@ class VideoCamera:
         if self.vs is not None:
             self.vs.stop()
 
-    def alarm(self, msg):
+    def alarm(self, msg, sound_file=None):
         # Emit the message to React via WebSocket
         socketio.emit('alert', {'message': msg})
         print(msg)
@@ -64,10 +64,15 @@ class VideoCamera:
         with open(LOG_FILE, "a") as f:
             f.write(f"{msg}\n")
 
-        import time
+        # Play the sound if a sound file is provided
+        if sound_file:
+            try:
+                playsound(sound_file)
+            except Exception as e:
+                print(f"Error playing sound: {e}")
+
         time.sleep(1)
-        #import os
-        #os.remove(LOG_FILE)
+        # Clear the log file after logging the alert
         with open(LOG_FILE, "w") as f:
             f.truncate()
 
@@ -110,7 +115,7 @@ class VideoCamera:
         if frame is None:
             print("No frame captured from camera.")
             return None
-        
+
         frame = cv2.resize(frame, (450, 450))
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -120,7 +125,7 @@ class VideoCamera:
             rect = dlib.rectangle(int(x), int(y), int(x + w), int(y + h))
             shape = self.predictor(gray, rect)
             shape = face_utils.shape_to_np(shape)
-            
+
             # Calculate metrics
             ear, leftEye, rightEye = self.final_ear(shape)
             lip_distance = self.lip_distance(shape)
@@ -130,32 +135,34 @@ class VideoCamera:
             if ear < self.EYE_AR_THRESH:
                 self.COUNTER += 1
                 if self.COUNTER >= self.EYE_AR_CONSEC_FRAMES:
-                    if self.drowsiness_start_time is None:
-                        self.drowsiness_start_time = time.time()
-                    if time.time() - self.drowsiness_start_time >= 4:
-                        if not self.alarm_status:
-                            self.alarm_status = True
-                            t = Thread(target=self.alarm, args=("Drowsiness alert!",))
-                            t.start()
-                    #cv2.putText(frame, "DROWSINESS ALERT!", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                    if not self.alarm_status:
+                        self.alarm_status = True
+                        t = Thread(target=self.alarm, args=("Drowsiness alert!",))
+                        t.start()
+                    cv2.putText(frame, "DROWSINESS ALERT!", (10, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             else:
                 self.COUNTER = 0
                 self.alarm_status = False
-                self.drowsiness_start_time = None
 
-            # Process yawning
-            if lip_distance > self.YAWN_THRESH:
-                if not self.alarm_status2:
-                    self.alarm_status2 = True
-                    t = Thread(target=self.alarm, args=("Yawn detected!",))
-                    t.start()
-                # cv2.putText(frame, "YAWN ALERT!", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-            else:
-                self.alarm_status2 = False
+            # Only process yawning if not currently in drowsiness alert
+            if not self.alarm_status:
+                # Process yawning
+                if lip_distance > self.YAWN_THRESH:
+                    if not self.alarm_status2:
+                        self.alarm_status2 = True
+                        # Provide the path to your MP3 file here
+                        t = Thread(target=self.alarm, args=(" ", "yawn_alert.wav"))
+                        t.start()
+                    cv2.putText(frame, " ", (10, 60),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                else:
+                    self.alarm_status2 = False
 
-            # Process head tilt
+            # Process head tilt regardless of drowsiness or yawning
             if abs(tilt_angle) > self.ALERT_TILT_ANGLE:
-                cv2.putText(frame, "HEAD TILT ALERT!", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                cv2.putText(frame, " ", (10, 90),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
         ret, jpeg = cv2.imencode('.jpg', frame)
         if not ret:
