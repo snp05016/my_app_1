@@ -64,6 +64,13 @@ class VideoCamera:
         with open(LOG_FILE, "a") as f:
             f.write(f"{msg}\n")
 
+        import time
+        time.sleep(1)
+        #import os
+        #os.remove(LOG_FILE)
+        with open(LOG_FILE, "w") as f:
+            f.truncate()
+
     def eye_aspect_ratio(self, eye):
         A = dist.euclidean(eye[1], eye[5])
         B = dist.euclidean(eye[2], eye[4])
@@ -130,7 +137,7 @@ class VideoCamera:
                             self.alarm_status = True
                             t = Thread(target=self.alarm, args=("Drowsiness alert!",))
                             t.start()
-                    cv2.putText(frame, "DROWSINESS ALERT!", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                    #cv2.putText(frame, "DROWSINESS ALERT!", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             else:
                 self.COUNTER = 0
                 self.alarm_status = False

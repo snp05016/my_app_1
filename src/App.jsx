@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Cam.css"; // Import the CSS file
+import fileContent from './alerts_log.txt?raw';
 
 const Cam = () => {
   const [alert, setAlert] = useState("Loading..."); // State to store the alert message
@@ -30,7 +31,7 @@ const Cam = () => {
         alt="Video"
       />
       <div className="alert-box">
-        <p>{alert}</p> {/* Display the alert message */}
+        <pre>{fileContent}</pre> {/* Display the alert message */}
       </div>
     </div>
   );
